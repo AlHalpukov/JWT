@@ -1,6 +1,7 @@
 ﻿using JWT.DataAccess.MSSQL.Entities;
 using JWT.DataAccess.MSSQL.Repositories;
 using JWT.WebAPI.Providers;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace JWT.WebAPI.Controllers;
@@ -8,11 +9,13 @@ namespace JWT.WebAPI.Controllers;
 [ApiController]
 public class UsersController : ControllerBase
 {
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IUsersRepository _repository;
     private readonly IJwtProvider _provider;
 
-    public UsersController(IUsersRepository repository, IJwtProvider provider)
+    public UsersController(IUsersRepository repository, IJwtProvider provider, IHttpContextAccessor httpContextAccesso)
     {
+        _httpContextAccessor = httpContextAccesso;
         _repository = repository;
         _provider = provider;
     }
@@ -34,8 +37,10 @@ public class UsersController : ControllerBase
 
         var token = _provider.GenerateToken(user);
 
-        return Ok(token);
+        var responseCookies = _httpContextAccessor.HttpContext.Response.Cookies;
+        responseCookies.Append("tasty", token);
 
+        return Ok();
     }
 
     [HttpPost("register")]
@@ -50,6 +55,13 @@ public class UsersController : ControllerBase
             Role = role
         });
 
+        return Ok();
+    }
+
+    [HttpGet("home")]
+    [Authorize]
+    public async Task<IActionResult> Home()
+    {
         return Ok();
     }
 }

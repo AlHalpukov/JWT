@@ -9,19 +9,20 @@ namespace JWT.WebAPI.Providers;
 
 public class JwtProvider : IJwtProvider
 {
-    private readonly IConfiguration _configuration;
-    public JwtProvider(IConfiguration configuration)
+    private readonly JWTOptions _options;
+
+    public JwtProvider(IOptions<JWTOptions> options)
     {
-        _configuration = configuration;
+        _options = options.Value;
     }
     public string GenerateToken(User user)
     {
         var token = new JwtSecurityToken(
             claims: [new Claim("userRole", user.Role)],
             signingCredentials: new SigningCredentials(
-                new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWTOptions:SecretKey"])),
+                new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.SecretKey)),
                     SecurityAlgorithms.HmacSha256),
-            expires: DateTime.UtcNow.AddHours(Double.Parse(_configuration["JWTOptions:ExpiresHours"])));
+            expires: DateTime.UtcNow.AddHours(_options.ExpiresHours));
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
